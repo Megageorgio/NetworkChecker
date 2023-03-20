@@ -5,7 +5,7 @@ import time
 import os.path
 
 
-def check_ip(hostname, ip, ports):
+def check_ip(sock, hostname, ip, ports):
     ping_response = ping(ip)
     output = time.strftime("%d.%m.%Y %H:%M:%S", time.localtime())
     output += ' | ' + hostname
@@ -27,11 +27,8 @@ def check_ip(hostname, ip, ports):
             print('число ' + port + ' больше 65535 и не может являться номером порта ')
             return
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(2)
         port_response = sock.connect_ex((ip, parsed_port))
-
-        print('port ' + port + ': ' + ('unknown' if port_response == 0 else 'opened'))
+        print('port ' + port + ': ' + ('unknown' if port_response == 0 else 'open'))
 
 
 def run(path):
@@ -44,6 +41,9 @@ def run(path):
         if len(reader.fieldnames) != 2:
             print('Некорректный формат файла')
             return
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
 
         print('time | host | ip | packet loss | rtt max ms | state')
         for row in reader:
@@ -58,7 +58,7 @@ def run(path):
                     continue
                 ports = list(filter(str.strip, row['Ports'].split(",")))
                 for ip in ip_list:
-                    check_ip(hostname, ip, ports)
+                    check_ip(sock, hostname, ip, ports)
 
             except Exception as e:
                 print('Ошибка при попытке обработать строку ' + str(reader.line_num) + ': ' + str(e))
